@@ -1,0 +1,7 @@
+#!/usr/bin/with-contenv bash
+
+echo "**** adding envfile support ****"
+
+if ! grep -E -q '^# Added by envfile mod' /etc/services.d/code-server/run; then
+	sed -i '/^#!\/usr\/bin/a \\n# Added by envfile mod\ntest -f ~abc/.env && set -o allexport && source ~abc/.env && set +o allexport' /etc/services.d/code-server/run
+fi
