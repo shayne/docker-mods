@@ -1,0 +1,35 @@
+#!/usr/bin/with-contenv bash
+
+echo "**** installing linuxbrew ****"
+
+local MISSING_PKGS=()
+
+if ! dpkg -l | grep build-essential > /dev/null; then
+	MISSING_PKGS+=("build-essential")
+fi
+if ! dpkg -l | grep curl> /dev/null; then
+	MISSING_PKGS+=("curl")
+fi
+if ! dpkg -l | grep file> /dev/null; then
+	MISSING_PKGS+=("file")
+fi
+if ! dpkg -l | grep git> /dev/null; then
+	MISSING_PKGS+=("git")
+fi
+
+if (( ${#MISSING_PKGS[*]} > 0 )); then
+	apt-get update && apt-get install -y ${MISSING_PKGS[*]}
+fi
+
+# abc user needs to run sudo for linuxbrew installation
+# we'll make it NOPASSWD temporarily
+sed -r -i "s/(^abc.+)ALL$/\1NOPASSWD:ALL/" /etc/sudoers
+
+sudo -u abc bash -c 'echo | /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"'
+
+# restore sudoers file
+sed -r -i "s/(^abc.+)NOPASSWD:ALL$/\1ALL/" /etc/sudoers
+
+if ! grep -E -q '^# Added by linuxbrew mod' /etc/services.d/code-server/run; then
+	sed -i '/^#!\/usr\/bin/a \\n# Added by linuxbrew mod\neval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)' /etc/services.d/code-server/run
+fi
